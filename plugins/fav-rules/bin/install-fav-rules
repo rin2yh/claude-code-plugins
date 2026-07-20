@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# fav-rules pack installer.
+#   Usage: install-fav-rules <category|all> [user|project]
+#     category : rules/ 直下のサブディレクトリ名 (common, ts, ...)
+#     all      : 全カテゴリを一括で配置
+#     scope    : user (default) → ~/.claude/rules/<category>/
+#                project        → $PWD/.claude/rules/<category>/
+
+usage() {
+  echo "usage: install-fav-rules <category|all> [user|project]" >&2
+  echo "       install-fav-rules --list" >&2
+}
+
+resolve_self() {
+  local path="$1"
+  if command -v readlink >/dev/null 2>&1 && readlink -f "$path" >/dev/null 2>&1; then
+    readlink -f "$path"
+  elif command -v realpath >/dev/null 2>&1; then
+    realpath "$path"
+  else
+    (cd "$(dirname "$path")" && printf '%s/%s\n' "$(pwd -P)" "$(basename "$path")")
+  fi
+}
+
+SCRIPT_PATH="$(resolve_self "$0")"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-}"
+if [[ -z "${PLUGIN_ROOT}" || ! -d "${PLUGIN_ROOT}/rules" ]]; then
+  PLUGIN_ROOT="$(dirname "$(dirname "${SCRIPT_PATH}")")"
+fi
+
+SRC_ROOT="${PLUGIN_ROOT}/rules"
+if [[ ! -d "${SRC_ROOT}" ]]; then
+  echo "install-fav-rules: source rules directory not found: ${SRC_ROOT}" >&2
+  exit 1
+fi
+
+list_categories() {
+  find "${SRC_ROOT}" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+}
+
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 2
+fi
+
+if [[ "$1" == "--list" || "$1" == "-l" ]]; then
+  list_categories
+  exit 0
+fi
+
+CATEGORY="$1"
+SCOPE="${2:-user}"
+
+case "$SCOPE" in
+  user)    DEST_ROOT="${HOME}/.claude/rules" ;;
+  project) DEST_ROOT="${PWD}/.claude/rules" ;;
+  *) usage; exit 2 ;;
+esac
+
+install_one() {
+  local cat="$1"
+  local src="${SRC_ROOT}/${cat}"
+  if [[ ! -d "${src}" ]]; then
+    echo "install-fav-rules: unknown category '${cat}'. available: $(list_categories | tr '\n' ' ')" >&2
+    return 1
+  fi
+  local dest="${DEST_ROOT}/${cat}"
+  mkdir -p "${dest}"
+  cp "${src}"/*.md "${dest}/"
+  local count
+  count=$(find "${dest}" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+  printf 'Installed %s file(s) [%s] -> %s\n' "${count}" "${cat}" "${dest}"
+}
+
+if [[ "${CATEGORY}" == "all" ]]; then
+  while IFS= read -r cat; do
+    install_one "${cat}"
+  done < <(list_categories)
+else
+  install_one "${CATEGORY}"
+fi

@@ -1,0 +1,12 @@
+{
+  "name": "meta-skills",
+  "description": "Claude Code の仕組み (.claude/rules や skill など) を作成・編集するためのメタスキル集",
+  "version": "0.1.0",
+  "author": {
+    "name": "rin2yh"
+  },
+  "homepage": "https://github.com/rin2yh/claude-code-plugins",
+  "repository": "https://github.com/rin2yh/claude-code-plugins",
+  "license": "MIT",
+  "keywords": ["claude-code", "meta", "rules", "authoring"]
+}
