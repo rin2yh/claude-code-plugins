@@ -1,0 +1,12 @@
+{
+  "name": "general-skills",
+  "description": "領域を問わず使える汎用スキル集",
+  "version": "0.1.0",
+  "author": {
+    "name": "rin2yh"
+  },
+  "homepage": "https://github.com/rin2yh/claude-code-plugins",
+  "repository": "https://github.com/rin2yh/claude-code-plugins",
+  "license": "MIT",
+  "keywords": ["general", "proofreading", "writing", "japanese"]
+}

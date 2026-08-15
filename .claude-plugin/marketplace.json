@@ -23,6 +23,11 @@
       "name": "fav-rules",
       "source": "./fav-rules",
       "description": "言語・領域別に整理された .claude/rules パック。/fav-rules:install <category> でユーザー or プロジェクトの rules ディレクトリに配置"
+    },
+    {
+      "name": "general-skills",
+      "source": "./general-skills",
+      "description": "領域を問わず使える汎用スキル集"
     }
   ]
 }
