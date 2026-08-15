@@ -19,7 +19,7 @@ rin2yh の汎用 Claude Code スキル・ルールをまとめた [プラグイ�
 | `development-skills` | 開発ワークフロー系スキル集。`dependabot-pr-review` / `tdd` |
 | `meta-skills` | Claude Code の仕組み (rules / skill 等) を作るメタスキル集。現状 `rule-creator` |
 | `fav-rules` | 言語・領域別 `.claude/rules/` パック。`/fav-rules:install <category>` で配置 |
-| `general-skills` | 領域を問わず使える汎用スキル集。現状 `proofread`（日本語テキストの校正） |
+| `general-skills` | 領域を問わず使える汎用スキル集 |
 
 ## スキル呼び出し
 
