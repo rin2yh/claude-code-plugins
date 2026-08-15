@@ -5,28 +5,25 @@
   "owner": {
     "name": "rin2yh"
   },
-  "metadata": {
-    "pluginRoot": "./plugins"
-  },
   "plugins": [
     {
       "name": "development-skills",
-      "source": "./development-skills",
+      "source": "./plugins/development-skills",
       "description": "開発ワークフロー系スキル集 (dependabot-pr-review / tdd)"
     },
     {
       "name": "meta-skills",
-      "source": "./meta-skills",
+      "source": "./plugins/meta-skills",
       "description": "Claude Code の仕組み (.claude/rules や skill など) を作成・編集するためのメタスキル集"
     },
     {
       "name": "fav-rules",
-      "source": "./fav-rules",
+      "source": "./plugins/fav-rules",
       "description": "言語・領域別に整理された .claude/rules パック。/fav-rules:install <category> でユーザー or プロジェクトの rules ディレクトリに配置"
     },
     {
       "name": "general-skills",
-      "source": "./general-skills",
+      "source": "./plugins/general-skills",
       "description": "領域を問わず使える汎用スキル集"
     }
   ]
