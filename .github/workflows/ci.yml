@@ -38,9 +38,9 @@ jobs:
         run: |
           status=0
           for skill in plugins/*/skills/*/SKILL.md; do
-            dir=$(dirname "$skill")
-            grep -o '`references/[a-z0-9./-]*\.md`' "$skill" | tr -d '`' | sort -u | while read -r ref; do
-              [ -f "$dir/$ref" ] || { echo "missing: $dir/$ref (referenced by $skill)" >&2; exit 1; }
-            done || status=1
+            dir=${skill%/*}
+            for ref in $(grep -o '`references/[a-z0-9./-]*\.md`' "$skill" | tr -d '`' | sort -u); do
+              [ -f "$dir/$ref" ] || { echo "missing: $dir/$ref (referenced by $skill)" >&2; status=1; }
+            done
           done
           exit $status

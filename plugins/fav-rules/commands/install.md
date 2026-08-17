@@ -7,6 +7,6 @@ allowed-tools:
   - Read
 ---
 
-`install-fav-rules` スキル（`skills/install-fav-rules/SKILL.md`）の手順に従って、引数 `$ARGUMENTS` の内容を配置してください。
+`${CLAUDE_PLUGIN_ROOT}/skills/install-fav-rules/SKILL.md` を読み、その手順に従って引数 `$ARGUMENTS` の内容を配置してください。
 
-引数の意味、既定の配置先、`--format` の使い分け、実行後に報告すべきことはすべてスキル側に書いてあります。このコマンドは Claude Code から明示的に呼ぶための入り口で、スキルと同じことをします。
+引数の意味、既定の配置先、`--format` の使い分け、実行後に報告すべきことはすべてそのスキルに書いてあります。このコマンドは Claude Code から短く呼ぶための入り口で、スキルと同じことをします。

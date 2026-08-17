@@ -87,9 +87,7 @@ install-fav-rules all project --format agents # 現在のリポジトリの ./AG
 
 カテゴリ一覧は `install-fav-rules --list` で確認できます。
 
-`--format agents` は既存の `AGENTS.md` を壊さずに書き込みますが、パススコープは失われます。詳細は [`install-fav-rules` スキルの Codex 向け参照](plugins/fav-rules/skills/install-fav-rules/references/codex.md) をご覧ください。
-
-両形式を同時に配置しても互いに干渉しません。
+`--format agents` は既存の `AGENTS.md` を壊さずに書き込みますが、パススコープは失われます。両形式を同時に配置しても互いに干渉しません。詳細は [`install-fav-rules` スキルの Codex 向け参照](plugins/fav-rules/skills/install-fav-rules/references/codex.md) をご覧ください。
 
 ## ディレクトリ構成
 
@@ -117,6 +115,16 @@ install-fav-rules all project --format agents # 現在のリポジトリの ./AG
         ├── commands/install.md           # Claude Code 用スラッシュコマンド
         └── skills/install-fav-rules/{SKILL.md,references/}
 ```
+
+## スキルを追加するときの約束
+
+`SKILL.md` は 1 本を Claude Code と Codex で共有します。ツールによって変わるものだけを `references/` に出す、という切り分けです。
+
+1. **手順がツールによって変わるなら** `references/claude-code.md` と `references/codex.md` を作り、`SKILL.md` に「実行環境ごとの手順」節を置いて両方を指す。**本文だけ読んでも通せる一般手順を必ず残す**（どちらでもないツールで動くため）
+2. **変わらないなら `references/` は作らない。** `tdd` がその例で、Red→Green→Refactor はツールに依存しません。対称性のために空の参照ファイルを置かないでください
+3. **Codex が無視する frontmatter は本文か `description` で補う。** `disable-model-invocation` と `allowed-tools` は Codex では効きません。`tdd` は「明示的に呼ばれたときだけ使う」を `description` に書いて補っています
+
+`SKILL.md` から `references/*.md` へのリンク切れは CI で検出します。
 
 ## ローカルでの動作確認
 

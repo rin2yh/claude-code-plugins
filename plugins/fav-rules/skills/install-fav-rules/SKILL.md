@@ -44,5 +44,7 @@ install-fav-rules <category|all> [user|project] [--format claude|agents]
 
 ## 注意
 
-- `--format agents` は既存の `AGENTS.md` を書き換える。**書き換え方と、その形式で何が失われるかは `references/codex.md` に書いてある。** 実行前にそこを読み、ユーザーに伝えるべきことを伝える
+- `--format agents` は既存の `AGENTS.md` をマーカーで挟んだブロック単位で置き換える。手書きの内容は保持され、再実行しても重複しない
+- `--format agents` ではルールの `paths:` によるスコープが**機械的には効かなくなる**（代わりに「適用対象」の一行が本文に入る）。配置後の報告で必ず伝える
+- 上記2点の詳しい挙動は `references/codex.md` にある。Claude Code から `--format agents` を使うときは、そちらも読む
 - このスキルはルールの中身を書かない。新しいルールを作りたい、既存のルールを直したい、という依頼なら `meta-skills` プラグインの `rule-creator` の領分

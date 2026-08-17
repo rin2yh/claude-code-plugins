@@ -2,12 +2,14 @@
 
 ## 置き場所
 
-| 永続化したいもの | 置き場所 |
+SKILL.md の分類表の各行が、この環境ではどこに対応するか。
+
+| SKILL.md の分類 | Claude Code での置き場所 |
 |---|---|
-| 全セッションで常に効く普遍ルール | `CLAUDE.md` |
-| トピック別・パス別の規約 | `.claude/rules/*.md` |
-| 呼び出し時だけ実行する手順 | スキル（`.claude/skills/`） |
-| 機械的に強制したい禁止事項 | PreToolUse フック |
+| 常時読み込まれる規約ファイル | `CLAUDE.md` |
+| 個別のルールファイル | `.claude/rules/*.md` |
+| スキル | `.claude/skills/<name>/SKILL.md` |
+| フック | PreToolUse フック |
 
 このスキルが作るのは `.claude/rules/*.md`。
 
@@ -53,5 +55,4 @@ paths:
 ## 検証
 
 - `paths:` は必ず YAML 配列。不要なら**キーごと付けない**（空配列にすると意図が読めない）
-- glob が対象ファイルに実際にマッチするか `Glob` で確認する
 - 既存の `.claude/rules/*.md` と `CLAUDE.md` に矛盾する記述がないか見直す

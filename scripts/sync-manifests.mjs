@@ -54,11 +54,17 @@ const INTERFACE = {
 
 const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
 
+/** INTERFACE の引き当て。プラグインを足して定義を忘れたら、黙って既定値を出さず落とす。 */
+function requireInterface(name) {
+  const iface = INTERFACE[name];
+  if (!iface) throw new Error(`INTERFACE テーブルに '${name}' の定義がありません`);
+  return iface;
+}
+
 /** Codex 用プラグインマニフェストを組み立てる。 */
 function buildCodexPlugin(name) {
   const src = readJson(join(ROOT, "plugins", name, ".claude-plugin", "plugin.json"));
-  const iface = INTERFACE[name];
-  if (!iface) throw new Error(`INTERFACE テーブルに '${name}' の定義がありません`);
+  const iface = requireInterface(name);
 
   const manifest = {
     name: src.name,
@@ -99,7 +105,7 @@ function buildCodexMarketplace(marketplace) {
       name: p.name,
       source: { source: "local", path: p.source },
       description: p.description,
-      category: INTERFACE[p.name]?.category ?? "Developer Tools",
+      category: requireInterface(p.name).category,
     })),
   };
 }
