@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: t_wadaのTDDプラクティスに従ってRed→Green→Refactorサイクルを実行する
+description: t_wadaのTDDプラクティスに従ってRed→Green→Refactorサイクルを実行する。明示的に呼び出されたときだけ使う。「テストを書いて」「テストが落ちている」程度の依頼では起動せず、ユーザーがTDDで進めたいと言ったときに限る。
 disable-model-invocation: true
 argument-hint: "[実装したい機能の説明 or ファイルパス]"
 allowed-tools:

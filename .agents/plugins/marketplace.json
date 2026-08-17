@@ -1,6 +1,6 @@
 {
   "name": "rin2yh-plugins",
-  "description": "rin2yh の汎用スキル・ルールをまとめた Claude Code プラグイン marketplace",
+  "description": "rin2yh の汎用スキル・ルールをまとめたプラグイン marketplace (Claude Code / Codex 対応)",
   "interface": {
     "displayName": "rin2yh plugins"
   },
@@ -20,7 +20,7 @@
         "source": "local",
         "path": "./plugins/meta-skills"
       },
-      "description": "Claude Code の仕組み (.claude/rules や skill など) を作成・編集するためのメタスキル集",
+      "description": "プロジェクトルールを作成・編集するためのメタスキル集",
       "category": "Developer Tools"
     },
     {
