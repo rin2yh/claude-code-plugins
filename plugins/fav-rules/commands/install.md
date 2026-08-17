@@ -14,3 +14,13 @@ allowed-tools:
   - `project` → 現在のリポジトリの `.claude/rules/<category>/` に配置（そのプロジェクトのみ）
 
 実行後、コピー先パスと配置されたファイル一覧を報告してください。引数が空の場合は `install-fav-rules --list` でカテゴリ一覧を提示し、どれを入れるかユーザーに尋ねてください。
+
+## Codex 向けに配置したい場合
+
+`--format agents` を付けると `.claude/rules/` ではなく `AGENTS.md` に書き込みます（`user` なら `~/.codex/AGENTS.md`、`project` なら `./AGENTS.md`）。ユーザーが Codex でも同じ規約を使いたいと言った場合に使ってください。
+
+```
+install-fav-rules all --format agents
+```
+
+同じ内容を両形式で配置しても互いに干渉しません。詳細は `install-fav-rules` スキルの `references/` を参照してください。

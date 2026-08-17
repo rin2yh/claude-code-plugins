@@ -19,7 +19,7 @@
     {
       "name": "fav-rules",
       "source": "./plugins/fav-rules",
-      "description": "言語・領域別に整理された .claude/rules パック。/fav-rules:install <category> でユーザー or プロジェクトの rules ディレクトリに配置"
+      "description": "言語・領域別に整理されたルールパック。Claude Code は .claude/rules/、Codex は AGENTS.md へ配置する"
     },
     {
       "name": "general-skills",

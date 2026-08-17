@@ -2,14 +2,21 @@
 set -euo pipefail
 
 # fav-rules pack installer.
-#   Usage: install-fav-rules <category|all> [user|project]
+#   Usage: install-fav-rules <category|all> [user|project] [--format claude|agents]
 #     category : rules/ 直下のサブディレクトリ名 (common, ts, ...)
 #     all      : 全カテゴリを一括で配置
-#     scope    : user (default) → ~/.claude/rules/<category>/
-#                project        → $PWD/.claude/rules/<category>/
+#     scope    : user (default) / project
+#     format   : claude (default) → .claude/rules/<category>/*.md をそのまま配置
+#                agents           → AGENTS.md にマーカー付きブロックとして書き込む
+#
+#   配置先:
+#     claude + user    → ~/.claude/rules/<category>/
+#     claude + project → $PWD/.claude/rules/<category>/
+#     agents + user    → ~/.codex/AGENTS.md
+#     agents + project → $PWD/AGENTS.md
 
 usage() {
-  echo "usage: install-fav-rules <category|all> [user|project]" >&2
+  echo "usage: install-fav-rules <category|all> [user|project] [--format claude|agents]" >&2
   echo "       install-fav-rules --list" >&2
 }
 
@@ -25,12 +32,19 @@ resolve_self() {
 }
 
 SCRIPT_PATH="$(resolve_self "$0")"
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-}"
-if [[ -z "${PLUGIN_ROOT}" || ! -d "${PLUGIN_ROOT}/rules" ]]; then
-  PLUGIN_ROOT="$(dirname "$(dirname "${SCRIPT_PATH}")")"
+# プラグインルートを指す環境変数はホストごとに違う。どれも無ければスクリプト位置から逆算する。
+ROOT=""
+for candidate in "${CLAUDE_PLUGIN_ROOT:-}" "${CODEX_PLUGIN_ROOT:-}" "${PLUGIN_ROOT:-}"; do
+  if [[ -n "${candidate}" && -d "${candidate}/rules" ]]; then
+    ROOT="${candidate}"
+    break
+  fi
+done
+if [[ -z "${ROOT}" ]]; then
+  ROOT="$(dirname "$(dirname "${SCRIPT_PATH}")")"
 fi
 
-SRC_ROOT="${PLUGIN_ROOT}/rules"
+SRC_ROOT="${ROOT}/rules"
 if [[ ! -d "${SRC_ROOT}" ]]; then
   echo "install-fav-rules: source rules directory not found: ${SRC_ROOT}" >&2
   exit 1
@@ -50,14 +64,167 @@ if [[ "$1" == "--list" || "$1" == "-l" ]]; then
   exit 0
 fi
 
-CATEGORY="$1"
-SCOPE="${2:-user}"
+CATEGORY=""
+SCOPE=""
+FORMAT="claude"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --format)
+      [[ $# -ge 2 ]] || { usage; exit 2; }
+      FORMAT="$2"
+      shift 2
+      ;;
+    --format=*)
+      FORMAT="${1#--format=}"
+      shift
+      ;;
+    -*)
+      usage
+      exit 2
+      ;;
+    *)
+      if [[ -z "${CATEGORY}" ]]; then
+        CATEGORY="$1"
+      elif [[ -z "${SCOPE}" ]]; then
+        SCOPE="$1"
+      else
+        usage
+        exit 2
+      fi
+      shift
+      ;;
+  esac
+done
+
+SCOPE="${SCOPE:-user}"
 
 case "$SCOPE" in
-  user)    DEST_ROOT="${HOME}/.claude/rules" ;;
-  project) DEST_ROOT="${PWD}/.claude/rules" ;;
+  user|project) ;;
   *) usage; exit 2 ;;
 esac
+
+case "$FORMAT" in
+  claude)
+    case "$SCOPE" in
+      user)    DEST_ROOT="${HOME}/.claude/rules" ;;
+      project) DEST_ROOT="${PWD}/.claude/rules" ;;
+    esac
+    ;;
+  agents)
+    case "$SCOPE" in
+      user)    AGENTS_FILE="${HOME}/.codex/AGENTS.md" ;;
+      project) AGENTS_FILE="${PWD}/AGENTS.md" ;;
+    esac
+    ;;
+  *) usage; exit 2 ;;
+esac
+
+# --format claude: rules/<cat>/*.md をそのままコピーする。
+install_one_claude() {
+  local cat="$1"
+  local src="${SRC_ROOT}/${cat}"
+  local dest="${DEST_ROOT}/${cat}"
+  mkdir -p "${dest}"
+  cp "${src}"/*.md "${dest}/"
+  local count
+  count=$(find "${dest}" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+  printf 'Installed %s file(s) [%s] -> %s\n' "${count}" "${cat}" "${dest}"
+}
+
+# ルール1本を AGENTS.md 向けに変換する。
+#   - フロントマターを剥がす（AGENTS.md では解釈されないため）
+#   - paths: があれば「適用対象」の一行に変換する。AGENTS.md にはパススコープが
+#     無いので、条件を本文として読ませるしかない
+#   - 見出しを 2 段下げる。AGENTS.md は 1 ファイルに複数トピックが同居するので、
+#     カテゴリ見出し (##) の下にルール (###) がぶら下がる形にする
+render_rule_for_agents() {
+  local file="$1"
+  awk '
+    BEGIN { in_fm = 0; fm_done = 0; in_paths = 0; paths = "" }
+    NR == 1 && $0 == "---" { in_fm = 1; next }
+    in_fm && $0 == "---" { in_fm = 0; fm_done = 1; next }
+    in_fm {
+      if ($0 ~ /^paths:[[:space:]]*$/) { in_paths = 1; next }
+      if (in_paths && $0 ~ /^[[:space:]]*-[[:space:]]*/) {
+        item = $0
+        sub(/^[[:space:]]*-[[:space:]]*/, "", item)
+        gsub(/^"|"$/, "", item)
+        paths = (paths == "" ? "`" item "`" : paths ", `" item "`")
+        next
+      }
+      in_paths = 0
+      next
+    }
+    {
+      # フロントマター直後の空行を落として、ブロック内の間隔を揃える
+      if (!started && $0 ~ /^[[:space:]]*$/) { next }
+      started = 1
+      if (!printed_paths && paths != "") {
+        # 最初の見出しの直後に「適用対象」を差し込む
+        if ($0 ~ /^#/) {
+          print "##" $0
+          print ""
+          print "適用対象: " paths
+          printed_paths = 1
+          next
+        }
+      }
+      if ($0 ~ /^#/) { print "##" $0; next }
+      print
+    }
+    END {
+      if (!printed_paths && paths != "") {
+        print ""
+        print "適用対象: " paths
+      }
+    }
+  ' "$file"
+}
+
+# --format agents: カテゴリ単位でマーカーに挟んだブロックを AGENTS.md に書く。
+# 追記ではなく置換にすることで、再実行しても重複しない。
+install_one_agents() {
+  local cat="$1"
+  local src="${SRC_ROOT}/${cat}"
+  local begin="<!-- fav-rules:begin ${cat} -->"
+  local end="<!-- fav-rules:end ${cat} -->"
+
+  local block
+  block="$(
+    printf '%s\n' "${begin}"
+    printf '\n## fav-rules: %s\n' "${cat}"
+    for file in "${src}"/*.md; do
+      printf '\n'
+      render_rule_for_agents "${file}"
+    done
+    printf '\n%s\n' "${end}"
+  )"
+
+  mkdir -p "$(dirname "${AGENTS_FILE}")"
+  touch "${AGENTS_FILE}"
+
+  local tmp
+  tmp="$(mktemp)"
+  if grep -qF "${begin}" "${AGENTS_FILE}"; then
+    # 既存ブロックを差し替える
+    BEGIN_MARK="${begin}" END_MARK="${end}" BLOCK="${block}" awk '
+      $0 == ENVIRON["BEGIN_MARK"] { skip = 1; print ENVIRON["BLOCK"]; next }
+      $0 == ENVIRON["END_MARK"] { skip = 0; next }
+      !skip { print }
+    ' "${AGENTS_FILE}" >"${tmp}"
+    printf 'Updated block [%s] -> %s\n' "${cat}" "${AGENTS_FILE}"
+  else
+    cat "${AGENTS_FILE}" >"${tmp}"
+    # 既存内容があれば1行空けてから追加する
+    if [[ -s "${tmp}" ]]; then
+      printf '\n' >>"${tmp}"
+    fi
+    printf '%s\n' "${block}" >>"${tmp}"
+    printf 'Appended block [%s] -> %s\n' "${cat}" "${AGENTS_FILE}"
+  fi
+  mv "${tmp}" "${AGENTS_FILE}"
+}
 
 install_one() {
   local cat="$1"
@@ -66,13 +233,16 @@ install_one() {
     echo "install-fav-rules: unknown category '${cat}'. available: $(list_categories | tr '\n' ' ')" >&2
     return 1
   fi
-  local dest="${DEST_ROOT}/${cat}"
-  mkdir -p "${dest}"
-  cp "${src}"/*.md "${dest}/"
-  local count
-  count=$(find "${dest}" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
-  printf 'Installed %s file(s) [%s] -> %s\n' "${count}" "${cat}" "${dest}"
+  case "$FORMAT" in
+    claude) install_one_claude "${cat}" ;;
+    agents) install_one_agents "${cat}" ;;
+  esac
 }
+
+if [[ -z "${CATEGORY}" ]]; then
+  usage
+  exit 2
+fi
 
 if [[ "${CATEGORY}" == "all" ]]; then
   while IFS= read -r cat; do
