@@ -44,6 +44,5 @@ install-fav-rules <category|all> [user|project] [--format claude|agents]
 
 ## 注意
 
-- `--format agents` は既存の `AGENTS.md` を書き換える。マーカー (`<!-- fav-rules:begin <category> -->`) で挟んだブロックの置換なので、**手書きの内容は保持され、再実行しても重複しない**。それでも初回は実行前に既存ファイルの有無を伝える
-- `--format agents` ではルールの `paths:` によるファイル種別スコープが失われる。代わりに各ルールの見出し直下へ「適用対象」の一行が生成される。**スコープが機械的には効かなくなることをユーザーに伝える**
+- `--format agents` は既存の `AGENTS.md` を書き換える。**書き換え方と、その形式で何が失われるかは `references/codex.md` に書いてある。** 実行前にそこを読み、ユーザーに伝えるべきことを伝える
 - このスキルはルールの中身を書かない。新しいルールを作りたい、既存のルールを直したい、という依頼なら `meta-skills` プラグインの `rule-creator` の領分

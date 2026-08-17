@@ -87,10 +87,7 @@ install-fav-rules all project --format agents # 現在のリポジトリの ./AG
 
 カテゴリ一覧は `install-fav-rules --list` で確認できます。
 
-**`--format agents` の挙動**
-
-- カテゴリごとに `<!-- fav-rules:begin <category> -->` 〜 `<!-- fav-rules:end <category> -->` で挟んだブロックとして書き込みます。追記ではなく置換なので、再実行しても重複せず、マーカー外の手書き内容は保持されます
-- `AGENTS.md` にはパススコープの仕組みが無いため、ルールの `paths:` フロントマターは「適用対象: `**/*.{ts,tsx}`」の一行に変換されます。**機械的なスコープではなくなる**点にご注意ください
+`--format agents` は既存の `AGENTS.md` を壊さずに書き込みますが、パススコープは失われます。詳細は [`install-fav-rules` スキルの Codex 向け参照](plugins/fav-rules/skills/install-fav-rules/references/codex.md) をご覧ください。
 
 両形式を同時に配置しても互いに干渉しません。
 

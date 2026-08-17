@@ -21,6 +21,9 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+/** marketplace 自体の表示名。marketplace.json の name とは別物なので導出できない。 */
+const MARKETPLACE_DISPLAY_NAME = "rin2yh plugins";
+
 /** @type {Record<string, {displayName: string, shortDescription: string, category: string, capabilities: string[]}>} */
 const INTERFACE = {
   "development-skills": {
@@ -91,7 +94,7 @@ function buildCodexMarketplace(marketplace) {
   return {
     name: marketplace.name,
     description: marketplace.description,
-    interface: { displayName: "rin2yh plugins" },
+    interface: { displayName: MARKETPLACE_DISPLAY_NAME },
     plugins: marketplace.plugins.map((p) => ({
       name: p.name,
       source: { source: "local", path: p.source },

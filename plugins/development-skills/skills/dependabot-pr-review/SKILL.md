@@ -91,7 +91,7 @@ PR本文には Dependabot が埋め込んだ Release notes / Changelog / Commits
 
 ### 7. CI green の待機
 
-- 実行環境ごとの参照ファイルに書かれた方法で待機し、CI状態を再取得する（`pull_request_read get_check_runs` または `gh pr checks <PR番号>` / `gh run watch <run_id>`）。目安は150〜200秒間隔。
+- 実行環境ごとの参照ファイルに書かれた方法で待機し、CI状態を再取得する（`pull_request_read get_check_runs` または `gh pr checks <PR番号>` / `gh run watch <run_id>`）。
 - 全ジョブ（集約ゲートジョブを含む）の結果が `success`（または `skipped`/`neutral` の非失敗）になるまで繰り返す。
 - いずれかが `failure` の場合は手順6へ戻す。
 
