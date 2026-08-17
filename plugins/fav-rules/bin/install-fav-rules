@@ -20,18 +20,6 @@ usage() {
   echo "       install-fav-rules --list" >&2
 }
 
-resolve_self() {
-  local path="$1"
-  if command -v readlink >/dev/null 2>&1 && readlink -f "$path" >/dev/null 2>&1; then
-    readlink -f "$path"
-  elif command -v realpath >/dev/null 2>&1; then
-    realpath "$path"
-  else
-    (cd "$(dirname "$path")" && printf '%s/%s\n' "$(pwd -P)" "$(basename "$path")")
-  fi
-}
-
-SCRIPT_PATH="$(resolve_self "$0")"
 # プラグインルートを指す環境変数はホストごとに違う。どれも無ければスクリプト位置から逆算する。
 ROOT=""
 for candidate in "${CLAUDE_PLUGIN_ROOT:-}" "${CODEX_PLUGIN_ROOT:-}" "${PLUGIN_ROOT:-}"; do
@@ -41,7 +29,9 @@ for candidate in "${CLAUDE_PLUGIN_ROOT:-}" "${CODEX_PLUGIN_ROOT:-}" "${PLUGIN_RO
   fi
 done
 if [[ -z "${ROOT}" ]]; then
-  ROOT="$(dirname "$(dirname "${SCRIPT_PATH}")")"
+  # シンボリックリンク越しに呼ばれても bin/ の親に辿り着けるよう解決しておく。
+  self="$(readlink -f "$0" 2>/dev/null)" || self="$0"
+  ROOT="${self%/*/*}"
 fi
 
 SRC_ROOT="${ROOT}/rules"
@@ -50,8 +40,14 @@ if [[ ! -d "${SRC_ROOT}" ]]; then
   exit 1
 fi
 
+# glob 展開は照合順で並ぶので sort も要らない。
 list_categories() {
-  find "${SRC_ROOT}" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+  local dir
+  for dir in "${SRC_ROOT}"/*/; do
+    [[ -d "${dir}" ]] || continue
+    dir="${dir%/}"
+    printf '%s\n' "${dir##*/}"
+  done
 }
 
 if [[ $# -eq 0 ]]; then
@@ -99,6 +95,11 @@ done
 
 SCOPE="${SCOPE:-user}"
 
+if [[ -z "${CATEGORY}" ]]; then
+  usage
+  exit 2
+fi
+
 case "$SCOPE" in
   user|project) ;;
   *) usage; exit 2 ;;
@@ -125,11 +126,10 @@ install_one_claude() {
   local cat="$1"
   local src="${SRC_ROOT}/${cat}"
   local dest="${DEST_ROOT}/${cat}"
+  local files=( "${src}"/*.md )
   mkdir -p "${dest}"
-  cp "${src}"/*.md "${dest}/"
-  local count
-  count=$(find "${dest}" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
-  printf 'Installed %s file(s) [%s] -> %s\n' "${count}" "${cat}" "${dest}"
+  cp "${files[@]}" "${dest}/"
+  printf 'Installed %s file(s) [%s] -> %s\n' "${#files[@]}" "${cat}" "${dest}"
 }
 
 # カテゴリ内のルールをまとめて AGENTS.md 向けに変換する。
@@ -140,8 +140,12 @@ install_one_claude() {
 #     カテゴリ見出し (##) の下にルール (###) がぶら下がる形にする
 render_rules_for_agents() {
   awk '
-    FNR == 1 { in_fm = 0; in_paths = 0; paths = ""; started = 0; printed_paths = 0; if (NR > 1) print "" }
-    FNR == 1 && $0 == "---" { in_fm = 1; next }
+    FNR == 1 {
+      if (NR > 1) print ""          # ファイル間の区切り
+      in_paths = 0; paths = ""; started = 0; printed_paths = 0
+      in_fm = ($0 == "---")
+      if (in_fm) next
+    }
     in_fm && $0 == "---" { in_fm = 0; next }
     in_fm {
       if ($0 ~ /^paths:[[:space:]]*$/) { in_paths = 1; next }
@@ -232,11 +236,6 @@ install_one() {
     agents) install_one_agents "${cat}" ;;
   esac
 }
-
-if [[ -z "${CATEGORY}" ]]; then
-  usage
-  exit 2
-fi
 
 if [[ "${CATEGORY}" == "all" ]]; then
   while IFS= read -r cat; do
