@@ -1,0 +1,44 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      # Codex 用マニフェストは .claude-plugin/ から生成している。
+      # 片方だけ直してコミットされると、Claude Code と Codex で内容がずれる。
+      - name: Codex 用マニフェストが最新か
+        run: node scripts/sync-manifests.mjs --check
+
+      - name: JSON がパースできるか
+        run: |
+          git ls-files '*.json' | while read -r f; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" \
+              || { echo "invalid JSON: $f" >&2; exit 1; }
+          done
+
+      - name: シェルスクリプトの構文
+        run: bash -n plugins/fav-rules/bin/install-fav-rules
+
+      # SKILL.md から references/*.md へのリンクは、実行環境の分岐そのもの。
+      # 切れていると片方の環境で手順が読めなくなる。
+      - name: references/ のリンク切れ
+        run: |
+          status=0
+          for skill in plugins/*/skills/*/SKILL.md; do
+            dir=$(dirname "$skill")
+            grep -o '`references/[a-z0-9./-]*\.md`' "$skill" | tr -d '`' | sort -u | while read -r ref; do
+              [ -f "$dir/$ref" ] || { echo "missing: $dir/$ref (referenced by $skill)" >&2; exit 1; }
+            done || status=1
+          done
+          exit $status
