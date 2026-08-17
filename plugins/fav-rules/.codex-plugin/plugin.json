@@ -1,0 +1,29 @@
+{
+  "name": "fav-rules",
+  "version": "0.4.0",
+  "description": "言語・領域別に整理された .claude/rules パック。/fav-rules:install <category> で配置する",
+  "author": {
+    "name": "rin2yh"
+  },
+  "homepage": "https://github.com/rin2yh/claude-code-plugins",
+  "repository": "https://github.com/rin2yh/claude-code-plugins",
+  "license": "MIT",
+  "keywords": [
+    "rules",
+    "conventions",
+    "japanese",
+    "typescript"
+  ],
+  "interface": {
+    "displayName": "Fav Rules",
+    "shortDescription": "言語・領域別のルールパックを配置するインストーラ",
+    "longDescription": "言語・領域別に整理された .claude/rules パック。/fav-rules:install <category> で配置する",
+    "developerName": "rin2yh",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/rin2yh/claude-code-plugins"
+  }
+}
