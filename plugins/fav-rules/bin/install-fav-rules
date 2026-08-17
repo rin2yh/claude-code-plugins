@@ -132,18 +132,17 @@ install_one_claude() {
   printf 'Installed %s file(s) [%s] -> %s\n' "${count}" "${cat}" "${dest}"
 }
 
-# ルール1本を AGENTS.md 向けに変換する。
+# カテゴリ内のルールをまとめて AGENTS.md 向けに変換する。
 #   - フロントマターを剥がす（AGENTS.md では解釈されないため）
 #   - paths: があれば「適用対象」の一行に変換する。AGENTS.md にはパススコープが
 #     無いので、条件を本文として読ませるしかない
 #   - 見出しを 2 段下げる。AGENTS.md は 1 ファイルに複数トピックが同居するので、
 #     カテゴリ見出し (##) の下にルール (###) がぶら下がる形にする
-render_rule_for_agents() {
-  local file="$1"
+render_rules_for_agents() {
   awk '
-    BEGIN { in_fm = 0; fm_done = 0; in_paths = 0; paths = "" }
-    NR == 1 && $0 == "---" { in_fm = 1; next }
-    in_fm && $0 == "---" { in_fm = 0; fm_done = 1; next }
+    FNR == 1 { in_fm = 0; in_paths = 0; paths = ""; started = 0; printed_paths = 0; if (NR > 1) print "" }
+    FNR == 1 && $0 == "---" { in_fm = 1; next }
+    in_fm && $0 == "---" { in_fm = 0; next }
     in_fm {
       if ($0 ~ /^paths:[[:space:]]*$/) { in_paths = 1; next }
       if (in_paths && $0 ~ /^[[:space:]]*-[[:space:]]*/) {
@@ -179,7 +178,7 @@ render_rule_for_agents() {
         print "適用対象: " paths
       }
     }
-  ' "$file"
+  ' "$@"
 }
 
 # --format agents: カテゴリ単位でマーカーに挟んだブロックを AGENTS.md に書く。
@@ -193,37 +192,32 @@ install_one_agents() {
   local block
   block="$(
     printf '%s\n' "${begin}"
-    printf '\n## fav-rules: %s\n' "${cat}"
-    for file in "${src}"/*.md; do
-      printf '\n'
-      render_rule_for_agents "${file}"
-    done
+    printf '\n## fav-rules: %s\n\n' "${cat}"
+    render_rules_for_agents "${src}"/*.md
     printf '\n%s\n' "${end}"
   )"
 
-  mkdir -p "$(dirname "${AGENTS_FILE}")"
-  touch "${AGENTS_FILE}"
+  mkdir -p "${AGENTS_FILE%/*}"
 
-  local tmp
-  tmp="$(mktemp)"
-  if grep -qF "${begin}" "${AGENTS_FILE}"; then
-    # 既存ブロックを差し替える
+  if [[ -f "${AGENTS_FILE}" ]] && grep -qF "${begin}" "${AGENTS_FILE}"; then
+    # 既存ブロックを差し替える。awk は同じファイルを読みながら書けないので
+    # ここだけ一時ファイルを経由する。
+    local tmp
+    tmp="$(mktemp)"
     BEGIN_MARK="${begin}" END_MARK="${end}" BLOCK="${block}" awk '
       $0 == ENVIRON["BEGIN_MARK"] { skip = 1; print ENVIRON["BLOCK"]; next }
       $0 == ENVIRON["END_MARK"] { skip = 0; next }
       !skip { print }
     ' "${AGENTS_FILE}" >"${tmp}"
+    mv "${tmp}" "${AGENTS_FILE}"
     printf 'Updated block [%s] -> %s\n' "${cat}" "${AGENTS_FILE}"
   else
-    cat "${AGENTS_FILE}" >"${tmp}"
-    # 既存内容があれば1行空けてから追加する
-    if [[ -s "${tmp}" ]]; then
-      printf '\n' >>"${tmp}"
-    fi
-    printf '%s\n' "${block}" >>"${tmp}"
+    # 追記するだけなので、ファイル全体を読み書きする必要はない。
+    # >> は不在ファイルを作るため touch も要らない。
+    [[ -s "${AGENTS_FILE}" ]] && printf '\n' >>"${AGENTS_FILE}"
+    printf '%s\n' "${block}" >>"${AGENTS_FILE}"
     printf 'Appended block [%s] -> %s\n' "${cat}" "${AGENTS_FILE}"
   fi
-  mv "${tmp}" "${AGENTS_FILE}"
 }
 
 install_one() {
