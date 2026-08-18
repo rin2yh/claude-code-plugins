@@ -2,10 +2,7 @@
 
 rin2yh の汎用スキル・ルールをまとめたプラグイン marketplace です。**Claude Code と Codex の両方**からインストールできます。
 
-- Claude Code: [プラグイン marketplace](https://code.claude.com/docs/en/plugin-marketplaces)（`.claude-plugin/`）
-- Codex: プラグイン marketplace（`.agents/plugins/marketplace.json` ＋ `.codex-plugin/`）
-
-スキル本体（`SKILL.md`）は 1 本を両者で共有し、実行環境ごとに手順が変わる部分だけ各スキルの `references/` に分けています。
+スキル（`SKILL.md`）の形式は両者で共通なので、同じものがそのまま動きます。
 
 ## インストール
 
@@ -40,16 +37,15 @@ codex plugin add general-skills@rin2yh-plugins
 | `fav-rules` | 言語・領域別のルールパック。`install-fav-rules` スキル（または `/fav-rules:install`）で配置 |
 | `general-skills` | 領域を問わず使える汎用スキル集。現状 `proofread` |
 
-## 対応状況
+## Codex で使うときの注意
 
-| スキル | Claude Code | Codex | 備考 |
-|---|---|---|---|
-| `dependabot-pr-review` | ○ | ○ | Codex では `mcp__github__*` が使えないため `gh` CLI が必要 |
-| `tdd` | ○ | ○ | Codex では `disable-model-invocation` が効かず自動起動しうる |
-| `rule-creator` | ○ | ○ | 出力先が `.claude/rules/` と `AGENTS.md` で変わる |
-| `proofread` | ○ | ○ | Codex では5観点を逐次実行する |
-| `install-fav-rules` | ○ | ○ | Codex では `--format agents` を使う |
-| `/fav-rules:install` | ○ | — | Codex はスラッシュコマンドを読まないため、上記スキルを使う |
+| | |
+|---|---|
+| `dependabot-pr-review` | `mcp__github__*` が使えないため `gh` CLI が必要 |
+| `tdd` | `disable-model-invocation` が効かないため自動起動しうる |
+| `rule-creator` | ルールの出力先が `AGENTS.md` になる |
+| `install-fav-rules` | `--format agents` を使う（下記） |
+| `/fav-rules:install` | スラッシュコマンドは読まれないので `install-fav-rules` スキルを使う |
 
 ## スキル呼び出し
 
@@ -67,80 +63,52 @@ codex plugin add general-skills@rin2yh-plugins
 
 ## fav-rules の使い方
 
-### Claude Code（`.claude/rules/` へ配置）
+Claude Code は `.claude/rules/` を読み、Codex は `AGENTS.md` を読むので、配置先を `--format` で切り替えます。
 
 ```
-install-fav-rules ts              # ~/.claude/rules/ts/ に TypeScript 系ルールを配置
-install-fav-rules common          # 共通ルール (develop/response/github-actions/github-review)
-install-fav-rules all             # 全カテゴリ
-install-fav-rules ts project      # 現在のリポジトリの .claude/rules/ts/ に配置
-```
+install-fav-rules ts                          # ~/.claude/rules/ts/ に配置
+install-fav-rules common                      # 共通ルール (develop/response/github-actions/github-review)
+install-fav-rules all                         # 全カテゴリ
+install-fav-rules ts project                  # 現在のリポジトリの .claude/rules/ts/ に配置
 
-`/fav-rules:install <category> [user|project]` からも同じことができます。
-
-### Codex（`AGENTS.md` へ配置）
-
-```
 install-fav-rules ts --format agents          # ~/.codex/AGENTS.md に書き込む
 install-fav-rules all project --format agents # 現在のリポジトリの ./AGENTS.md に書き込む
 ```
 
-カテゴリ一覧は `install-fav-rules --list` で確認できます。
+カテゴリ一覧は `install-fav-rules --list` で確認できます。`/fav-rules:install <category> [user|project]` からも同じことができます。
 
-`--format agents` は既存の `AGENTS.md` を壊さずに書き込みますが、パススコープは失われます。両形式を同時に配置しても互いに干渉しません。詳細は [`install-fav-rules` スキルの Codex 向け参照](plugins/fav-rules/skills/install-fav-rules/references/codex.md) をご覧ください。
+`--format agents` はカテゴリごとに `<!-- fav-rules:begin <category> -->` 〜 `<!-- fav-rules:end <category> -->` で挟んだブロックとして書き込みます。追記ではなく置換なので、再実行しても重複せず、マーカー外の手書き内容は保持されます。ルールの中身は変換せずそのまま連結します（`paths:` フロントマターは `AGENTS.md` ではフィルタとして機能しませんが、適用範囲を伝える情報としては読まれます）。
+
+両形式を同時に配置しても互いに干渉しません。
 
 ## ディレクトリ構成
 
-各プラグインが自身の `skills/` を持ち、Claude Code 用と Codex 用のマニフェストを並置する構成です。
-
 ```
 .
-├── .claude-plugin/marketplace.json      # Claude Code 用カタログ（生成の入力）
-├── .agents/plugins/marketplace.json     # Codex 用カタログ（生成物）
-├── scripts/sync-manifests.mjs           # Codex 用マニフェストの生成 / --check
+├── .claude-plugin/marketplace.json      # Claude Code / Codex 共通のカタログ
 └── plugins/
     ├── development-skills/
     │   ├── .claude-plugin/plugin.json
-    │   ├── .codex-plugin/plugin.json     # 生成物
-    │   └── skills/
-    │       ├── dependabot-pr-review/{SKILL.md,references/}
-    │       └── tdd/SKILL.md
+    │   └── skills/{dependabot-pr-review,tdd}/SKILL.md
     ├── meta-skills/
-    │   └── skills/rule-creator/{SKILL.md,references/}
+    │   └── skills/rule-creator/SKILL.md
     ├── general-skills/
-    │   └── skills/proofread/{SKILL.md,references/}
+    │   └── skills/proofread/SKILL.md
     └── fav-rules/
         ├── rules/{common,ts}/
         ├── bin/install-fav-rules
         ├── commands/install.md           # Claude Code 用スラッシュコマンド
-        └── skills/install-fav-rules/{SKILL.md,references/}
+        └── skills/install-fav-rules/SKILL.md
 ```
 
-## スキルを追加するときの約束
-
-`SKILL.md` は 1 本を Claude Code と Codex で共有します。ツールによって変わるものだけを `references/` に出す、という切り分けです。
-
-1. **手順がツールによって変わるなら** `references/claude-code.md` と `references/codex.md` を作り、`SKILL.md` に「実行環境ごとの手順」節を置いて両方を指す。**本文だけ読んでも通せる一般手順を必ず残す**（どちらでもないツールで動くため）
-2. **変わらないなら `references/` は作らない。** `tdd` がその例で、Red→Green→Refactor はツールに依存しません。対称性のために空の参照ファイルを置かないでください
-3. **Codex が無視する frontmatter は本文か `description` で補う。** `disable-model-invocation` と `allowed-tools` は Codex では効きません。`tdd` は「明示的に呼ばれたときだけ使う」を `description` に書いて補っています
-
-`SKILL.md` から `references/*.md` へのリンク切れは CI で検出します。
+Codex 専用のマニフェストはありません。Codex は `.claude-plugin/marketplace.json` をそのまま読み、`plugins/<name>/skills/` の `SKILL.md` も規約で見つけます。
 
 ## ローカルでの動作確認
 
 ```
-# Codex 用マニフェストを再生成する（.claude-plugin/ を編集したら必ず実行）
-node scripts/sync-manifests.mjs
-
-# 生成物が最新か確認するだけ（CI と同じ）
-node scripts/sync-manifests.mjs --check
-```
-
-marketplace の検証:
-
-```
 claude plugin validate .                 # Claude Code
 codex plugin marketplace add ./          # Codex
+codex plugin list
 ```
 
 ## ライセンス

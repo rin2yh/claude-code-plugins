@@ -29,13 +29,10 @@ Dependabot の依存更新PRを、**リリースノート・変更内容・破�
 - **外部イベント待ちに `sleep` をフォアグラウンドで使わない**。CI待機の具体的なやり方は環境によって違うので、下の「実行環境ごとの手順」を見る。
 - 一覧系（CI run 一覧・check 一覧）の応答は巨大になりがち。`gh ... --json` で必要フィールドだけ絞る、または MCP の応答が保存ファイルへ退避された場合は `python3` でスライスして読む。
 
-## 実行環境ごとの手順
+## 実行環境による違い
 
-CI green の待ち方（手順7・9）と、コミット/報告の文体規約の置き場所は実行環境によって違う。動いているエージェントに合わせて、対応する参照ファイルを**1つだけ**読んでから進める。
-
-- Claude Code → `references/claude-code.md`
-- Codex → `references/codex.md`
-- どちらでもない → 参照ファイルは読まず、`gh run watch <run_id>` で待つ
+- **GitHub 操作**: `mcp__github__*` が使えない環境では `gh` CLI を使う。以降の手順は MCP と `gh` を併記してあるので、使える方を読む
+- **CI 待ち**: バックグラウンドのタイマーを仕掛けられる環境ならそれで待ち、完了通知後に状態を再取得する。無ければ `gh run watch <run_id> --exit-status` でブロックする。どちらも使えないときだけ 150〜200 秒の `sleep` を挟んでポーリングする
 
 ## 手順
 
@@ -91,7 +88,7 @@ PR本文には Dependabot が埋め込んだ Release notes / Changelog / Commits
 
 ### 7. CI green の待機
 
-- 実行環境ごとの参照ファイルに書かれた方法で待機し、CI状態を再取得する（`pull_request_read get_check_runs` または `gh pr checks <PR番号>` / `gh run watch <run_id>`）。
+- 冒頭「実行環境による違い」の方法で待機し、CI状態を再取得する（`pull_request_read get_check_runs` または `gh pr checks <PR番号>` / `gh run watch <run_id>`）。
 - 全ジョブ（集約ゲートジョブを含む）の結果が `success`（または `skipped`/`neutral` の非失敗）になるまで繰り返す。
 - いずれかが `failure` の場合は手順6へ戻す。
 

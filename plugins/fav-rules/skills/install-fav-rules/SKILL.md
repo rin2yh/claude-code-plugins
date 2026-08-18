@@ -14,13 +14,14 @@ allowed-tools:
 
 配置そのものは `install-fav-rules` スクリプトが行う。このスキルの役目は、**引数を正しく組み立てること**と、**配置後に何がどこへ入ったかを報告すること**。
 
-## 実行環境ごとの手順
+## 実行環境による違い
 
-スクリプトの呼び出し方と、既定の出力形式が実行環境によって違う。動いているエージェントに合わせて、対応する参照ファイルを**1つだけ**読んでから進める。
+`--format` の既定を実行環境に合わせて明示する。
 
-- Claude Code → `references/claude-code.md`
-- Codex → `references/codex.md`
-- どちらでもない → `references/codex.md` を読む（`AGENTS.md` 形式の方が汎用的なため）
+- **Claude Code** → `--format claude`。`.claude/rules/<category>/` に配置される
+- **Codex** → `--format agents`。`AGENTS.md` に書き込まれる。Codex は `.claude/rules/` を読まないので、既定のまま実行するとどこにも効かないファイルが増えるだけになる
+
+`install-fav-rules` は plugin の `bin/` が PATH に載っていればベア名で、載っていなければ `${CLAUDE_PLUGIN_ROOT}/bin/install-fav-rules` のようにフルパスで叩く。
 
 ## 引数
 
@@ -33,18 +34,18 @@ install-fav-rules <category|all> [user|project] [--format claude|agents]
 - **第2引数（任意、既定 `user`）**
   - `user` → 全プロジェクトで有効な場所へ配置
   - `project` → 現在のリポジトリだけに配置
-- **`--format`（任意）** 出力形式。既定値は実行環境ごとの参照ファイルを見る
+- **`--format`（任意）** 出力形式。既定値は上記のとおり実行環境で変わる
 
 ## 手順
 
 1. 引数が空なら `install-fav-rules --list` でカテゴリ一覧を出し、**どれを入れるかユーザーに尋ねる**。勝手に `all` を入れない
 2. カテゴリ名が一覧に無ければ、そのまま実行せず一覧を見せて聞き直す
-3. `--format` を明示して実行する。実行環境ごとの既定値は参照ファイルに書いてある
+3. `--format` を明示して実行する（既定に任せない）
 4. **コピー先のパスと、配置されたルールの一覧を報告する**
 
 ## 注意
 
 - `--format agents` は既存の `AGENTS.md` をマーカーで挟んだブロック単位で置き換える。手書きの内容は保持され、再実行しても重複しない
 - `--format agents` ではルールの `paths:` によるスコープが**機械的には効かなくなる**（代わりに「適用対象」の一行が本文に入る）。配置後の報告で必ず伝える
-- 上記2点の詳しい挙動は `references/codex.md` にある。Claude Code から `--format agents` を使うときは、そちらも読む
+- 両形式を同じマシンに入れても干渉しない。Claude Code と Codex を併用しているなら両方入れておくとよい
 - このスキルはルールの中身を書かない。新しいルールを作りたい、既存のルールを直したい、という依頼なら `meta-skills` プラグインの `rule-creator` の領分

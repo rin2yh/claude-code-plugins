@@ -7,7 +7,8 @@ set -euo pipefail
 #     all      : 全カテゴリを一括で配置
 #     scope    : user (default) / project
 #     format   : claude (default) → .claude/rules/<category>/*.md をそのまま配置
-#                agents           → AGENTS.md にマーカー付きブロックとして書き込む
+#                agents           → AGENTS.md にマーカー付きブロックとして連結する
+#                                   (内容は変換せずそのまま)
 #
 #   配置先:
 #     claude + user    → ~/.claude/rules/<category>/
@@ -132,59 +133,6 @@ install_one_claude() {
   printf 'Installed %s file(s) [%s] -> %s\n' "${#files[@]}" "${cat}" "${dest}"
 }
 
-# カテゴリ内のルールをまとめて AGENTS.md 向けに変換する。
-#   - フロントマターを剥がす（AGENTS.md では解釈されないため）
-#   - paths: があれば「適用対象」の一行に変換する。AGENTS.md にはパススコープが
-#     無いので、条件を本文として読ませるしかない
-#   - 見出しを 2 段下げる。AGENTS.md は 1 ファイルに複数トピックが同居するので、
-#     カテゴリ見出し (##) の下にルール (###) がぶら下がる形にする
-render_rules_for_agents() {
-  awk '
-    FNR == 1 {
-      if (NR > 1) print ""          # ファイル間の区切り
-      in_paths = 0; paths = ""; started = 0; printed_paths = 0
-      in_fm = ($0 == "---")
-      if (in_fm) next
-    }
-    in_fm && $0 == "---" { in_fm = 0; next }
-    in_fm {
-      if ($0 ~ /^paths:[[:space:]]*$/) { in_paths = 1; next }
-      if (in_paths && $0 ~ /^[[:space:]]*-[[:space:]]*/) {
-        item = $0
-        sub(/^[[:space:]]*-[[:space:]]*/, "", item)
-        gsub(/^"|"$/, "", item)
-        paths = (paths == "" ? "`" item "`" : paths ", `" item "`")
-        next
-      }
-      in_paths = 0
-      next
-    }
-    {
-      # フロントマター直後の空行を落として、ブロック内の間隔を揃える
-      if (!started && $0 ~ /^[[:space:]]*$/) { next }
-      started = 1
-      if (!printed_paths && paths != "") {
-        # 最初の見出しの直後に「適用対象」を差し込む
-        if ($0 ~ /^#/) {
-          print "##" $0
-          print ""
-          print "適用対象: " paths
-          printed_paths = 1
-          next
-        }
-      }
-      if ($0 ~ /^#/) { print "##" $0; next }
-      print
-    }
-    END {
-      if (!printed_paths && paths != "") {
-        print ""
-        print "適用対象: " paths
-      }
-    }
-  ' "$@"
-}
-
 # --format agents: カテゴリ単位でマーカーに挟んだブロックを AGENTS.md に書く。
 # 追記ではなく置換にすることで、再実行しても重複しない。
 install_one_agents() {
@@ -196,9 +144,13 @@ install_one_agents() {
   local block
   block="$(
     printf '%s\n' "${begin}"
-    printf '\n## fav-rules: %s\n\n' "${cat}"
-    render_rules_for_agents "${src}"/*.md
-    printf '\n%s\n' "${end}"
+    # ルールはそのまま連結する。paths: フロントマターは AGENTS.md では
+    # フィルタとして機能しないが、適用範囲を伝える情報としては読まれるので残す。
+    for file in "${src}"/*.md; do
+      printf '\n'
+      cat "${file}"
+    done
+    printf '%s\n' "${end}"
   )"
 
   mkdir -p "${AGENTS_FILE%/*}"
