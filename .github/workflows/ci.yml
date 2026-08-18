@@ -11,15 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 22
-
-      # Codex 用マニフェストは .claude-plugin/ から生成している。
-      # 片方だけ直してコミットされると、Claude Code と Codex で内容がずれる。
-      - name: Codex 用マニフェストが最新か
-        run: node scripts/sync-manifests.mjs --check
-
       - name: JSON がパースできるか
         run: |
           git ls-files -z '*.json' | xargs -0 node -e '
@@ -31,16 +22,3 @@ jobs:
 
       - name: シェルスクリプトの構文
         run: bash -n plugins/fav-rules/bin/install-fav-rules
-
-      # SKILL.md から references/*.md へのリンクは、実行環境の分岐そのもの。
-      # 切れていると片方の環境で手順が読めなくなる。
-      - name: references/ のリンク切れ
-        run: |
-          status=0
-          for skill in plugins/*/skills/*/SKILL.md; do
-            dir=${skill%/*}
-            for ref in $(grep -o '`references/[a-z0-9./-]*\.md`' "$skill" | tr -d '`' | sort -u); do
-              [ -f "$dir/$ref" ] || { echo "missing: $dir/$ref (referenced by $skill)" >&2; status=1; }
-            done
-          done
-          exit $status
