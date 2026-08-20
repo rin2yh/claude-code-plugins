@@ -1,7 +1,0 @@
-interface:
-  display_name: TDD
-  short_description: t_wada 式の Red→Green→Refactor サイクル
-policy:
-  # Claude Code の disable-model-invocation: true に対応する。
-  # 明示的に呼ばれたときだけ起動させ、文脈からの自動起動はさせない。
-  allow_implicit_invocation: false

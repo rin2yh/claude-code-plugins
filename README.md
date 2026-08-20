@@ -42,7 +42,6 @@ codex plugin add general-skills@rin2yh-plugins
 | | |
 |---|---|
 | `dependabot-pr-review` | `mcp__github__*` が使えないため `gh` CLI が必要 |
-| `tdd` | 自動起動の抑止は `agents/openai.yaml` の `policy.allow_implicit_invocation` で指定 |
 | `rule-creator` | ルールの出力先が `AGENTS.md` になる |
 | `install-fav-rules` | `--format agents` を使う（下記） |
 | `/fav-rules:install` | スラッシュコマンドは読まれないので `install-fav-rules` スキルを使う |
@@ -59,7 +58,7 @@ codex plugin add general-skills@rin2yh-plugins
 /fav-rules:install-fav-rules
 ```
 
-（`tdd` 以外は model-invoked でもよく、文脈から自動起動します）
+（いずれも model-invoked でもよく、文脈から自動起動します）
 
 ## fav-rules の使い方
 
@@ -89,9 +88,7 @@ install-fav-rules all project --format agents # 現在のリポジトリの ./AG
 └── plugins/
     ├── development-skills/
     │   ├── .claude-plugin/plugin.json
-    │   └── skills/
-    │       ├── dependabot-pr-review/SKILL.md
-    │       └── tdd/{SKILL.md,agents/openai.yaml}
+    │   └── skills/{dependabot-pr-review,tdd}/SKILL.md
     ├── meta-skills/
     │   └── skills/rule-creator/SKILL.md
     ├── general-skills/

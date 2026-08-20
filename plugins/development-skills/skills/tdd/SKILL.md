@@ -1,7 +1,6 @@
 ---
 name: tdd
-description: t_wadaのTDDプラクティスに従ってRed→Green→Refactorサイクルを実行する
-disable-model-invocation: true
+description: t_wadaのTDDプラクティスに従ってRed→Green→Refactorサイクルを実行する。「TDDで」「テストファーストで」「Red→Greenで進めて」と言われたとき、また新しい関数・クラス・モジュールをこれから実装するときに使う。失敗するテストを1つ書いてから最小実装で通し、リファクタするまでを1サイクルとして回す。既存コードのバグ修正やテストの追加だけを頼まれた場合は使わない（サイクルを回す相手が無い）。Vitest + pnpm のプロジェクトを前提とした手順なので、テストランナーが異なる場合はコマンドを読み替える。
 argument-hint: "[実装したい機能の説明 or ファイルパス]"
 allowed-tools:
   - Bash(pnpm run test:*)
