@@ -107,9 +107,12 @@ Codex 専用のマニフェストはありません。Codex は `.claude-plugin/
 
 ```
 claude plugin validate .                 # Claude Code
+
 codex plugin marketplace add ./          # Codex
-codex plugin list
+codex plugin add general-skills@rin2yh-plugins
 ```
+
+`marketplace.json` は `codex plugin marketplace add` が、各 `plugin.json` は `codex plugin add` が検証します（`claude plugin validate` は両方を見ます）。CI もこれを回しています。
 
 ## ライセンス
 

@@ -11,14 +11,26 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: JSON がパースできるか
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - run: npm i -g @openai/codex
+
+      # marketplace.json と各 plugin.json を実際に読ませる。
+      # marketplace add が marketplace.json を、plugin add が plugin.json を検証するので、
+      # 構文チェックを別に置く必要はない。
+      - name: Codex から使えるか
+        env:
+          CODEX_HOME: ${{ github.workspace }}/.codex-ci
         run: |
-          git ls-files -z '*.json' | xargs -0 node -e '
-            const fs = require("fs");
-            for (const f of process.argv.slice(1)) {
-              try { JSON.parse(fs.readFileSync(f, "utf8")); }
-              catch (e) { console.error(`invalid JSON: ${f}: ${e.message}`); process.exitCode = 1; }
-            }'
+          mkdir -p "$CODEX_HOME"
+          codex plugin marketplace add ./
+          status=0
+          for p in $(node -e 'JSON.parse(require("fs").readFileSync(".claude-plugin/marketplace.json","utf8")).plugins.forEach(x=>console.log(x.name))'); do
+            codex plugin add "$p@rin2yh-plugins" || { echo "failed: $p" >&2; status=1; }
+          done
+          exit $status
 
       - name: シェルスクリプトの構文
         run: bash -n plugins/fav-rules/bin/install-fav-rules
