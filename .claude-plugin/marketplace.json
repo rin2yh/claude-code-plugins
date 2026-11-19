@@ -14,7 +14,7 @@
     {
       "name": "meta-skills",
       "source": "./plugins/meta-skills",
-      "description": "Claude Code の仕組み (.claude/rules や skill など) を作成・編集するためのメタスキル集"
+      "description": "Claude Code のスキルやルールを作成・保守するためのメタスキル集"
     },
     {
       "name": "fav-rules",
