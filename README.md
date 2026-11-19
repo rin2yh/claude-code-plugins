@@ -16,22 +16,14 @@ rin2yh の汎用 Claude Code スキル・ルールをまとめた [プラグイ�
 
 | プラグイン | 内容 |
 |---|---|
-| `development-skills` | 開発ワークフロー系スキル集。`dependabot-pr-review` / `tdd` |
-| `meta-skills` | Claude Code のスキルやルールを作成・保守するメタスキル集。`rule-creator` / `skill-retrospective` |
+| `development-skills` | 開発ワークフロー系スキル集 |
+| `meta-skills` | Claude Code のスキルやルールを作成・保守するメタスキル集 |
 | `fav-rules` | 言語・領域別 `.claude/rules/` パック。`/fav-rules:install <category>` で配置 |
 | `general-skills` | 領域を問わず使える汎用スキル集 |
 
 ## スキル呼び出し
 
-```
-/development-skills:dependabot-pr-review
-/development-skills:tdd
-/meta-skills:rule-creator
-/meta-skills:skill-retrospective
-/general-skills:proofread
-```
-
-（スキルは model-invoked でもよく、Claude が文脈から判断して自動起動する）
+スキルは `/plugin-name:skill-name` の形式で呼び出せます。Claude が文脈から判断して自動起動することもあります。
 
 ## fav-rules の使い方
 
@@ -46,31 +38,17 @@ rin2yh の汎用 Claude Code スキル・ルールをまとめた [プラグイ�
 
 ## ディレクトリ構成
 
-各プラグインが自身の `skills/` を持つ、標準的なプラグインごとのディレクトリ構成。
+プラグインの詳細は各ディレクトリを参照してください。
 
 ```
 .
-├── .claude-plugin/marketplace.json
+├── .claude-plugin/
+│   └── marketplace.json
 └── plugins/
     ├── development-skills/
-    │   ├── .claude-plugin/plugin.json
-    │   └── skills/
-    │       ├── dependabot-pr-review/
-    │       └── tdd/
-    ├── meta-skills/
-    │   ├── .claude-plugin/plugin.json
-    │   └── skills/
-    │       ├── rule-creator/
-    │       └── skill-retrospective/
+    ├── fav-rules/
     ├── general-skills/
-    │   ├── .claude-plugin/plugin.json
-    │   └── skills/
-    │       └── proofread/
-    └── fav-rules/
-        ├── .claude-plugin/plugin.json
-        ├── rules/{common,ts}/
-        ├── bin/install-fav-rules
-        └── commands/install.md
+    └── meta-skills/
 ```
 
 ## ローカルでの動作確認
